@@ -22,8 +22,8 @@
 ## 你需要准备什么
 
 1. 一台 Windows 电脑。
-2. 已安装 Codex，并且终端里能执行 `codex`。
-3. 已安装 Node.js LTS，并且终端里能执行 `node`。
+2. 已安装 Codex，并且 PowerShell 里能执行 `codex`。
+3. 已安装 Node.js LTS，并且 PowerShell 里能执行 `node`。
 4. 一个 DeepSeek API Key。
 5. 会打开 PowerShell。
 
@@ -50,6 +50,16 @@ DeepSeek API Key 格式类似：
 
 不要把真实 API Key 发到 GitHub、论坛、截图或聊天群。
 
+## 先确认你在哪里执行命令
+
+本文默认你使用的是 **PowerShell**，窗口里通常会看到类似：
+
+```text
+PS C:\Users\你的用户名>
+```
+
+下面所有命令都复制到 PowerShell 里执行。
+
 ## 第一步：下载项目
 
 打开 PowerShell，复制执行：
@@ -57,7 +67,6 @@ DeepSeek API Key 格式类似：
 ```powershell
 cd $HOME
 git clone https://github.com/zuomian726/codex-deepseek-for-windows.git
-cd codex-deepseek-for-windows
 ```
 
 如果你的 Windows 没有 `git`，可以先安装 Git for Windows：
@@ -66,13 +75,16 @@ cd codex-deepseek-for-windows
 https://git-scm.com/download/win
 ```
 
-## 第二步：安装
+## 第二步：进入目录并安装
 
 把 `<your-deepseek-api-key>` 换成你的真实 DeepSeek API Key：
 
 ```powershell
+cd "$HOME\codex-deepseek-for-windows"
 powershell -ExecutionPolicy Bypass -File .\deepseek-codex-setup-windows\scripts\install.ps1 -ApiKey "<your-deepseek-api-key>"
 ```
+
+注意：如果你已经在 `codex-deepseek-for-windows` 目录里，就不用重复执行 `cd "$HOME\codex-deepseek-for-windows"`。
 
 安装成功后，会看到类似：
 
@@ -101,7 +113,7 @@ OK
 每次使用前，先启动 DeepSeek 桥接服务：
 
 ```powershell
-& "$HOME\.codex\deepseek-responses-proxy\start.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\start.ps1"
 ```
 
 进入你的项目目录：
@@ -119,7 +131,7 @@ codex -p deepseek
 不用时可以停止桥接服务：
 
 ```powershell
-& "$HOME\.codex\deepseek-responses-proxy\stop.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\stop.ps1"
 ```
 
 ## Codex 桌面端使用方法
@@ -127,7 +139,7 @@ codex -p deepseek
 如果你想让 Codex 桌面端也走 DeepSeek，执行：
 
 ```powershell
-& "$HOME\.codex\deepseek-responses-proxy\desktop-use-deepseek.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\desktop-use-deepseek.ps1"
 ```
 
 然后必须：
@@ -139,7 +151,7 @@ codex -p deepseek
 如果想恢复默认 OpenAI，执行：
 
 ```powershell
-& "$HOME\.codex\deepseek-responses-proxy\desktop-use-default.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\desktop-use-default.ps1"
 ```
 
 然后同样完全退出并重新打开 Codex 桌面端。
@@ -181,8 +193,8 @@ powershell -ExecutionPolicy Bypass -File .\deepseek-codex-setup-windows\scripts\
 然后重启桥接：
 
 ```powershell
-& "$HOME\.codex\deepseek-responses-proxy\stop.ps1"
-& "$HOME\.codex\deepseek-responses-proxy\start.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\stop.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\start.ps1"
 ```
 
 ## 修改模型
@@ -215,7 +227,45 @@ model = "deepseek-v4-pro"
 where.exe codex
 ```
 
-如果找不到，需要先安装或修复 Codex CLI。
+如果找不到，先在电脑里搜索 `codex.exe`：
+
+```powershell
+$roots = @($env:LOCALAPPDATA, $env:PROGRAMFILES, ${env:ProgramFiles(x86)}) | Where-Object { $_ -and (Test-Path $_) }
+Get-ChildItem $roots -Recurse -Filter codex.exe -ErrorAction SilentlyContinue | Select-Object -First 20 FullName
+```
+
+如果能搜到类似：
+
+```text
+C:\Users\你的用户名\AppData\Local\...\codex.exe
+```
+
+先复制完整路径，临时测试：
+
+```powershell
+& "C:\把这里换成你搜到的路径\codex.exe" --version
+```
+
+如果可以看到版本号，就把 `codex.exe` 所在目录加入当前用户 PATH。
+
+把下面第一行改成你真实搜到的 `codex.exe` 路径：
+
+```powershell
+$CodexExe = "C:\把这里换成你搜到的路径\codex.exe"
+$CodexDir = Split-Path $CodexExe -Parent
+$UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($UserPath -notlike "*$CodexDir*") {
+  [Environment]::SetEnvironmentVariable("Path", "$UserPath;$CodexDir", "User")
+}
+```
+
+然后关闭 PowerShell，重新打开，再测试：
+
+```powershell
+codex --version
+```
+
+如果搜不到 `codex.exe`，说明 Codex CLI 没装好，需要先安装或修复 Codex CLI。
 
 ### 2. `node` 不是内部或外部命令
 
@@ -262,7 +312,7 @@ Invoke-RestMethod http://127.0.0.1:8766/health
 如果失败，启动桥接：
 
 ```powershell
-& "$HOME\.codex\deepseek-responses-proxy\start.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\start.ps1"
 ```
 
 然后重新测试：
@@ -295,13 +345,13 @@ base_url = "https://api.deepseek.com"
 如果桌面端曾经切到 DeepSeek，先恢复默认：
 
 ```powershell
-& "$HOME\.codex\deepseek-responses-proxy\desktop-use-default.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\desktop-use-default.ps1"
 ```
 
 停止桥接：
 
 ```powershell
-& "$HOME\.codex\deepseek-responses-proxy\stop.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\stop.ps1"
 ```
 
 删除安装文件：
@@ -369,4 +419,3 @@ Codex -> 本地桥接 -> DeepSeek
 ```text
 http://127.0.0.1:8766
 ```
-

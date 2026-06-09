@@ -47,7 +47,7 @@ Never print the API key in user-facing output. Mask it in diagnostics.
 Start the proxy before using the DeepSeek profile:
 
 ```powershell
-& "$HOME\.codex\deepseek-responses-proxy\start.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\start.ps1"
 ```
 
 Interactive Codex with DeepSeek:
@@ -65,7 +65,7 @@ codex exec -p deepseek --skip-git-repo-check "只回复 OK"
 Stop the proxy:
 
 ```powershell
-& "$HOME\.codex\deepseek-responses-proxy\stop.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\stop.ps1"
 ```
 
 Health check:
@@ -85,9 +85,10 @@ Expected:
 Prefer terminal usage with `codex -p deepseek`, but support Desktop when the user explicitly asks. Codex Desktop does not expose the same obvious profile switch, so use the generated scripts instead of asking beginners to hand-edit TOML:
 
 ```powershell
-& "$HOME\.codex\deepseek-responses-proxy\desktop-use-deepseek.ps1"
-& "$HOME\.codex\deepseek-responses-proxy\desktop-use-default.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\desktop-use-deepseek.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME\.codex\deepseek-responses-proxy\desktop-use-default.ps1"
 ```
 
 Explain that `desktop-use-deepseek.ps1` starts the proxy, creates a one-time original backup of `%USERPROFILE%\.codex\config.toml`, and writes DeepSeek as the global model provider. Tell the user to fully quit and reopen Codex Desktop after switching. If Desktop fails to connect, start the proxy or run `desktop-use-default.ps1` to restore the original config from before the first Desktop switch.
 
+If `codex` is not recognized, tell the user to run `where.exe codex`. If that fails, search for `codex.exe`, test it by absolute path, add its folder to the current user's PATH, then reopen PowerShell.
